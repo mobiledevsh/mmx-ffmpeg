@@ -1,0 +1,128 @@
+# Builds the license-clean embedded FFmpeg (tools/ffmpeg/build.sh) for every platform, then runs the full
+# plugin test suite (engine corpus + IDE editor tests) on each platform against exactly that build.
+# Pushing a tag ffmpeg-<build-id> publishes the ZIPs to a GitHub release and attaches the manifest to put into
+# shared/src/main/resources/mmx/ffmpeg-manifest.json.
+
+name: Embedded FFmpeg
+on:
+  workflow_dispatch:
+  push:
+    tags: [ 'ffmpeg-*' ]
+  pull_request:
+    paths: [ 'tools/ffmpeg/**', '.github/workflows/ffmpeg.yml' ]
+
+jobs:
+  build:
+    name: Build ${{ matrix.platform }}
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - { platform: macos-arm64, runner: macos-15 }
+          - { platform: macos-x64, runner: macos-15-intel }
+          - { platform: linux-x64, runner: ubuntu-24.04, docker: linux }
+          - { platform: linux-arm64, runner: ubuntu-24.04-arm, docker: linux }
+          - { platform: windows-x64, runner: ubuntu-24.04, docker: windows }
+    runs-on: ${{ matrix.runner }}
+    steps:
+      - uses: actions/checkout@v7
+
+      - name: Cache sources
+        uses: actions/cache@v4
+        with:
+          path: .ffbuild/cache
+          key: ffmpeg-src-${{ hashFiles('tools/ffmpeg/versions.env') }}
+
+      - name: Build natively
+        if: ${{ !matrix.docker }}
+        run: tools/ffmpeg/build.sh ${{ matrix.platform }} dist
+
+      - name: Build in container
+        if: ${{ matrix.docker }}
+        run: |
+          docker build -f tools/ffmpeg/${{ matrix.docker }}.Dockerfile -t mmx-ffmpeg tools/ffmpeg
+          docker run --rm -v "$PWD:/src" -w /src mmx-ffmpeg tools/ffmpeg/build.sh ${{ matrix.platform }} dist
+
+      - uses: actions/upload-artifact@v7
+        with:
+          name: ffmpeg-${{ matrix.platform }}
+          path: dist/*
+
+  test:
+    name: Test with embedded ${{ matrix.platform }}
+    needs: build
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - { platform: macos-arm64, runner: macos-15 }
+          - { platform: macos-x64, runner: macos-15-intel }
+          - { platform: linux-x64, runner: ubuntu-24.04 }
+          - { platform: linux-arm64, runner: ubuntu-24.04-arm }
+          - { platform: windows-x64, runner: windows-2025 }
+    runs-on: ${{ matrix.runner }}
+    defaults:
+      run:
+        shell: bash
+    steps:
+      - uses: actions/checkout@v7
+      - uses: actions/setup-java@v5
+        with:
+          distribution: zulu
+          java-version: 21
+      - uses: gradle/actions/setup-gradle@v6
+
+      - uses: actions/download-artifact@v7
+        with:
+          name: ffmpeg-${{ matrix.platform }}
+          path: dist
+
+      - name: Unpack
+        run: |
+          cd dist && unzip -q ffmpeg-*.zip
+          bin=$(ls -d "$PWD"/ffmpeg-*/bin)
+          exe=$([ "${{ runner.os }}" = Windows ] && echo .exe || true)
+          "$bin/ffmpeg$exe" -hide_banner -version | sed -n 1,3p  # head would SIGPIPE under pipefail
+          echo "MMX_FFMPEG=$bin/ffmpeg$exe" >> "$GITHUB_ENV"
+
+      - name: Run tests
+        env:
+          MMX_TEST_REQUIRE_FFMPEG: 'true'
+        run: ./gradlew :shared:test test --continue
+
+      - name: Collect test results
+        if: ${{ always() }}
+        uses: actions/upload-artifact@v7
+        with:
+          name: tests-embedded-${{ matrix.platform }}
+          path: |
+            build/reports/tests
+            shared/build/reports/tests
+            build/mmx-corpus/INDEX.txt
+
+  release:
+    name: Publish
+    if: startsWith(github.ref, 'refs/tags/ffmpeg-')
+    needs: test
+    runs-on: ubuntu-24.04
+    permissions:
+      contents: write
+    steps:
+      - uses: actions/checkout@v7
+      - uses: actions/download-artifact@v7
+        with:
+          pattern: ffmpeg-*
+          path: dist
+          merge-multiple: true
+      # LGPL-3.0 makes us keep the Corresponding Source available, not just link to upstream: it goes into the release.
+      - name: Corresponding Source
+        run: tools/ffmpeg/sources.sh sources
+      - name: Release and manifest
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          tag=${GITHUB_REF#refs/tags/}
+          python3 tools/ffmpeg/make_manifest.py dist "https://github.com/${{ github.repository }}/releases/download/$tag" > dist/ffmpeg-manifest.json
+          gh release create "$tag" --title "Embedded FFmpeg ${tag#ffmpeg-}" \
+            --notes "LGPL-3.0 FFmpeg builds for MMX. The source archives of FFmpeg and every linked library, and the build scripts, are attached (see ffmpeg-*-sources.txt); configure lines are in BUILDINFO.txt inside every archive." \
+            dist/*.zip dist/*.sha256 dist/ffmpeg-manifest.json sources/*
