@@ -1,15 +1,12 @@
 # Builds the license-clean embedded FFmpeg (tools/ffmpeg/build.sh) for every platform, then runs the full
 # plugin test suite (engine corpus + IDE editor tests) on each platform against exactly that build.
-# Pushing a tag ffmpeg-<build-id> publishes the ZIPs to a GitHub release and attaches the manifest to put into
+# Runs only when started by hand (Actions | Embedded FFmpeg | Run workflow). Started on a tag ffmpeg-<build-id>, it
+# publishes the ZIPs to a GitHub release and attaches the manifest to put into
 # shared/src/main/resources/mmx/ffmpeg-manifest.json.
 
 name: Embedded FFmpeg
 on:
   workflow_dispatch:
-  push:
-    tags: [ 'ffmpeg-*' ]
-  pull_request:
-    paths: [ 'tools/ffmpeg/**', '.github/workflows/ffmpeg.yml' ]
 
 jobs:
   build:

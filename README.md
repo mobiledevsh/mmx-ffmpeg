@@ -72,9 +72,10 @@ build directory and the source cache (default `.ffbuild/`). Failed steps print t
 Result: `dist/ffmpeg-<build-id>-<platform>.zip` and `.sha256`. Versions and checksums of all sources are pinned
 in `versions.env`; bump `MMX_BUILD_ID` whenever it or `build.sh` changes.
 
-CI (`.github/workflows/ffmpeg.yml`) builds all five platforms, then runs the complete test suite on each of
-them with the fresh build. Pushing a tag `ffmpeg-<build-id>` publishes the ZIPs to a GitHub release together
-with `ffmpeg-manifest.json`.
+CI (`.github/workflows/ffmpeg.yml`, started by hand) builds all five platforms, then runs the complete test suite
+on each of them with the fresh build. Started on a tag `ffmpeg-<build-id>` (push the tag, then
+`gh workflow run ffmpeg.yml --ref ffmpeg-<build-id>`), it publishes the ZIPs to a GitHub release together with
+`ffmpeg-manifest.json`.
 
 ## Shipping it with the plugin
 
