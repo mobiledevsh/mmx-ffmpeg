@@ -77,8 +77,10 @@ Two ways, combinable:
    as `macos-arm64,windows-x64`) puts the binaries into `<plugin>/ffmpeg/<platform>/bin`. All five platforms add
    roughly 5× the archive size to the plugin; useful for offline/air-gapped distribution.
 
-For networks without GitHub access, host the ZIPs and a manifest on an internal server and set
-**Embedded build manifest URL** in the settings (or `MMX_FFMPEG_MANIFEST`).
+When the download fails, the error names the cause (proxy, filter, DNS, TLS inspection), the IDE proxy in use, and
+the ways out: fix the connection, install a system FFmpeg, or fetch the archive on another computer and use
+**Install from File…** in Settings | Tools | Multimedia (the SHA-256 must match the manifest). For whole networks
+without GitHub access, host the ZIPs and a manifest on an internal server and set `MMX_FFMPEG_MANIFEST` to its URL.
 
 ## The most complete FFmpeg from Homebrew (for local use)
 
