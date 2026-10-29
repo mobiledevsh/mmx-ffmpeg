@@ -36,6 +36,19 @@ matters for your distribution, remove the decoders in `build.sh` (`--disable-dec
 
 ## Building
 
+With Gradle (results in `build-ffmpeg/dist`, which `buildPlugin -Pmmx.bundleFfmpeg=…` uses by default):
+
+```bash
+./gradlew build-ffmpeg-macos-arm64   # one platform: macos-arm64, macos-x64, linux-x64, linux-arm64, windows-x64
+./gradlew build-ffmpeg              # all five (on a Mac: Rosetta for macos-x64, Docker for Linux and Windows)
+./gradlew clean-ffmpeg              # removes dist/ and work/, keeps the downloaded sources in build-ffmpeg/cache
+```
+
+A platform is skipped while its ZIP for the current `MMX_BUILD_ID` exists (`-Pmmx.rebuildFfmpeg=true` forces it);
+`./gradlew clean` does not touch `build-ffmpeg/`. The tasks run the commands below from a copy of `tools/ffmpeg`.
+
+By hand:
+
 ```bash
 # macOS (needs Xcode command line tools, python3, autoconf and libtool — brew install autoconf libtool;
 # pinned automake and nasm are built when missing)
