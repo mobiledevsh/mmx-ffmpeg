@@ -2,7 +2,7 @@
 # Collects the Corresponding Source of the embedded FFmpeg for a release: the pinned source archive of FFmpeg and of
 # every library linked into it (verified against versions.env), plus these build scripts, which LGPL-3.0 counts as part
 # of the source ("scripts used to control compilation"). Build-only tools (automake, nasm) are left out: they are not
-# distributed. Usage: tools/ffmpeg/sources.sh <out-dir>   (MMX_CACHE reuses archives build.sh already downloaded)
+# distributed. Usage: ./sources.sh <out-dir>   (MMX_CACHE reuses archives build.sh already downloaded)
 set -euo pipefail
 
 mkdir -p "${1:?out-dir}"
@@ -31,6 +31,8 @@ for name in FFMPEG ZLIB OPUS LAME LIBVPX DAV1D LIBJXL HIGHWAY BROTLI LCMS2 ZIMG;
   echo "$(basename "$file")  $sum  $url" >> "$LIST"
 done
 
-tar -czf "$OUT/ffmpeg-build-scripts-$MMX_BUILD_ID.tar.gz" -C "$HERE/../.." tools/ffmpeg
-echo "ffmpeg-build-scripts-$MMX_BUILD_ID.tar.gz  $(sha256 "$OUT/ffmpeg-build-scripts-$MMX_BUILD_ID.tar.gz")  tools/ffmpeg of this repository" >> "$LIST"
+# The committed scripts of this checkout (HEAD: the release tag in CI), not whatever the working tree holds.
+SCRIPTS="$OUT/ffmpeg-build-scripts-$MMX_BUILD_ID.tar.gz"
+git -C "$HERE" archive --format=tar.gz --prefix="mmx-ffmpeg-$MMX_BUILD_ID/" -o "$SCRIPTS" HEAD
+echo "$(basename "$SCRIPTS")  $(sha256 "$SCRIPTS")  github.com/mobiledevsh/mmx-ffmpeg at $(git -C "$HERE" rev-parse HEAD)" >> "$LIST"
 echo "Collected $(($(wc -l < "$LIST") - 3)) source archives in $OUT"

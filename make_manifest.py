@@ -1,9 +1,9 @@
 #!/usr/bin/env python3
 """Writes the plugin's embedded FFmpeg manifest from build.sh outputs.
 
-    tools/ffmpeg/make_manifest.py <dist-dir> <base-url> > shared/src/main/resources/mmx/ffmpeg-manifest.json
+    ./make_manifest.py <dist-dir> <base-url> > ffmpeg-manifest.json
 
-<base-url> is where the ZIPs are published, e.g. https://github.com/<owner>/<repo>/releases/download/ffmpeg-9.0.2-mmx1
+<base-url> is where the ZIPs are published, e.g. https://github.com/mobiledevsh/mmx-ffmpeg/releases/download/ffmpeg-9.0.2-mmx4
 """
 import json
 import os

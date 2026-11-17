@@ -1,0 +1,5 @@
+# Build directory and source cache (build.sh), build results, collected sources (sources.sh)
+.ffbuild/
+dist/
+sources/
+.DS_Store

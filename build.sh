@@ -1,15 +1,15 @@
 #!/usr/bin/env bash
-# Builds the embedded FFmpeg for MMX: static, LGPL v3 only (no --enable-gpl, no --enable-nonfree),
+# Builds the embedded FFmpeg of the Multimedia plugin (MMX): static, LGPL v3 only (no --enable-gpl, no --enable-nonfree),
 # external libraries limited to permissive/LGPL ones (zlib, dav1d, opus, libvpx, LAME, libjxl with highway/brotli/lcms2,
 # zimg for HDR tone mapping).
 #
-#   tools/ffmpeg/build.sh <platform> <out-dir>
+#   ./build.sh <platform> <out-dir>
 #
 #   macos-arm64, macos-x64   run natively on a Mac of that architecture, or macos-x64 under Rosetta on Apple
-#                            silicon (arch -x86_64 tools/ffmpeg/build.sh ...); needs Xcode CLT, python3, autoconf,
+#                            silicon (arch -x86_64 ./build.sh ...); needs Xcode CLT, python3, autoconf,
 #                            libtool; automake and nasm are built from pinned tarballs when missing
-#   linux-x64, linux-arm64   run inside tools/ffmpeg/linux.Dockerfile (Alpine/musl → fully static binary)
-#   windows-x64              run inside tools/ffmpeg/windows.Dockerfile (mingw-w64 cross build)
+#   linux-x64, linux-arm64   run inside linux.Dockerfile (Alpine/musl → fully static binary)
+#   windows-x64              run inside windows.Dockerfile (mingw-w64 cross build)
 #
 # Produces <out-dir>/ffmpeg-<build-id>-<platform>.zip (+ .sha256) with bin/ffmpeg, bin/ffprobe,
 # the LGPL text and BUILDINFO.txt (exact configure line and source URLs, as the LGPL requires).
@@ -289,7 +289,7 @@ done
 {
   echo "MMX embedded FFmpeg $MMX_BUILD_ID for $PLATFORM"
   echo "License: LGPL-3.0-or-later (FFmpeg built with --enable-version3, without --enable-gpl/--enable-nonfree)"
-  echo "Built: $(date -u +%Y-%m-%dT%H:%M:%SZ) by tools/ffmpeg/build.sh"
+  echo "Built: $(date -u +%Y-%m-%dT%H:%M:%SZ) by build.sh of github.com/mobiledevsh/mmx-ffmpeg"
   echo
   echo "Sources (verified by SHA-256):"
   grep -E '_(URL|SHA256)=' "$HERE/versions.env" | sed 's/^/  /'
