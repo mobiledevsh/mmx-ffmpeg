@@ -30,6 +30,11 @@ jobs:
           path: .ffbuild/cache
           key: ffmpeg-src-${{ hashFiles('versions.env') }}
 
+      # macOS runners have no autoconf; build.sh builds its pinned automake and nasm itself.
+      - name: Tools (macOS)
+        if: ${{ runner.os == 'macOS' }}
+        run: brew install autoconf libtool
+
       - name: Build natively
         if: ${{ !matrix.docker }}
         run: ./build.sh ${{ matrix.platform }} dist
