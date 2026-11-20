@@ -106,6 +106,19 @@ brew unlink ffmpeg && brew link --overwrite homebrew-ffmpeg/ffmpeg/ffmpeg
 ffmpeg -hide_banner -decoders | grep -E 'libjxl|libdav1d'   # check
 ```
 
+**After Homebrew updates a library it links**, this build may stop starting:
+`dyld: Library not loaded: /opt/homebrew/opt/jpeg-xl/lib/libjxl.0.12.dylib` (jpeg-xl 0.12 → 0.13 on
+12 November 2026). Homebrew rebuilds its bottles for a new library, but not a keg built from source, and
+`brew cleanup` removes the old library. `brew link --overwrite ffmpeg` doesn't help: it either keeps the broken
+build or switches to the core bottle without JPEG XL, zimg and libplacebo. Rebuild it instead; `reinstall` keeps
+the options it was built with:
+
+```bash
+brew linkage --test homebrew-ffmpeg/ffmpeg/ffmpeg          # "Broken dependencies:" lists what's gone
+brew reinstall homebrew-ffmpeg/ffmpeg/ffmpeg               # a couple of minutes when the dependencies are there
+ffmpeg -hide_banner -decoders | grep -E 'libjxl|libdav1d'   # check
+```
+
 Left out on purpose: `--with-decklink` and `--with-openssl` (make the build **non-free**, not redistributable;
 DeckLink also needs Blackmagic's SDK), `--with-tensorflow`, `--with-openvino`, `--with-ggml`, `--with-tesseract`
 (heavy ML/OCR stacks), `--with-jack` (needs a JACK server). `brew options homebrew-ffmpeg/ffmpeg/ffmpeg` lists
